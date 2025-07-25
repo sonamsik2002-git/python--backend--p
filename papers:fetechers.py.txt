@@ -1,0 +1,45 @@
+import requests
+from typing import List, Dict
+import csv
+
+
+def fetch_papers(query: str, debug: bool = False) -> List[Dict]:
+    base_url = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi"
+    params = {
+        "db": "pubmed",
+        "term": query,
+        "retmode": "json",
+        "retmax": 20  # limit for testing
+    }
+    response = requests.get(base_url, params=params)
+    response.raise_for_status()
+    id_list = response.json()["esearchresult"]["idlist"]
+
+    papers = []
+    for pmid in id_list:
+        summary = get_paper_summary(pmid)
+        if debug:
+            print(f"Fetched: {summary['title']}")
+        papers.append(summary)
+
+    return papers
+
+
+def get_paper_summary(pmid: str) -> Dict:
+    # Placeholder: Use ESummary or EFetch to get details
+    # In production, parse affiliations & filter companies
+    return {
+        "PubMedID": pmid,
+        "Title": f"Title for {pmid}",
+        "Publication Date": "2024-01-01",
+        "Non-academic Author(s)": "N/A",
+        "Company Affiliation(s)": "N/A",
+        "Corresponding Author Email": "N/A"
+    }
+
+
+def save_as_csv(papers: List[Dict], filename: str):
+    with open(filename, mode='w', newline='', encoding='utf-8') as csvfile:
+        writer = csv.DictWriter(csvfile, fieldnames=papers[0].keys())
+        writer.writeheader()
+        writer.writerows(papers)
